@@ -10,10 +10,11 @@ Commuters have no reliable way to know when the next bus will arrive, which push
 GoooSmart/
 ├── GoSmart_Backend/    # Django + DRF API (JWT auth, routes/stops, live tracking, ratings, traffic reports)
 ├── GoSmart_Frontend/   # React (Vite) web app consuming the API
-└── database/           # Original MySQL schema from the project proposal (reference/design doc)
+└── database/           # MySQL reference schema, seed data, queries, and design docs
 ```
 
 Each half has its own README with setup details:
+- [`database/README.md`](database/README.md) — ER diagram, FK policy, indexes, Django mapping
 - [`GoSmart_Backend/gosmart/api_readme.md`](GoSmart_Backend/gosmart/api_readme.md) — endpoints, roles, test users, Postman testing guide
 - [`GoSmart_Frontend/README.md`](GoSmart_Frontend/README.md) — frontend architecture and app flow
 
