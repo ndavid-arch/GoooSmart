@@ -1,7 +1,22 @@
 -- ============================================================
--- GoSmart — Database Schema (MySQL)
+-- GoSmart — Database Schema (MySQL 8.x)
+-- ============================================================
+-- Author  : Mizero Eloi (Database Designer)
+-- Purpose : Reference relational model for GoSmart bus tracking
+-- Engine  : InnoDB (FK support, row-level locking, crash recovery)
+-- Charset : utf8mb4 (full Unicode, including Kinyarwanda diacritics)
+--
+-- Usage   : mysql -u root -p gosmart < database/schema.sql
+-- Seed    : included below; see also seed.sql for standalone loading
+-- Queries : see queries.sql for views and reporting examples
 -- ============================================================
 
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ------------------------------------------------------------
+-- Teardown (reverse dependency order)
+-- ------------------------------------------------------------
 DROP TABLE IF EXISTS traffic_report;
 DROP TABLE IF EXISTS rating;
 DROP TABLE IF EXISTS route_stop;
@@ -11,8 +26,17 @@ DROP TABLE IF EXISTS route;
 DROP TABLE IF EXISTS driver;
 DROP TABLE IF EXISTS users;
 
+DROP VIEW IF EXISTS v_live_buses;
+DROP VIEW IF EXISTS v_route_stops_ordered;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================
+-- 1. CORE ENTITIES
+-- ============================================================
+
 -- ------------------------------------------------------------
--- USER 
+-- 1.1 USER — registered commuters, newcomers, and visitors
 -- ------------------------------------------------------------
 CREATE TABLE users (
     user_id     INT AUTO_INCREMENT PRIMARY KEY,
@@ -21,41 +45,48 @@ CREATE TABLE users (
     password    VARCHAR(255) NOT NULL,          -- store bcrypt hash, never plaintext
     user_type   ENUM('commuter', 'newcomer', 'visitor') NOT NULL DEFAULT 'commuter',
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='App end-users who submit ratings and traffic reports';
 
 -- ------------------------------------------------------------
--- DRIVER — operates bus, shares GPS position
+-- 1.2 DRIVER — operates a bus and shares GPS position
 -- ------------------------------------------------------------
 CREATE TABLE driver (
     driver_id   INT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(100) NOT NULL,
     license_no  VARCHAR(50)  NOT NULL UNIQUE,
     phone       VARCHAR(20)  NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Licensed operators assigned to buses';
 
 -- ------------------------------------------------------------
--- ROUTE — a path buses take (e.g. Nyabugogo–Kimironko)
+-- 1.3 ROUTE — a path buses take (e.g. Nyabugogo–Kimironko)
 -- ------------------------------------------------------------
 CREATE TABLE route (
     route_id    INT AUTO_INCREMENT PRIMARY KEY,
     route_name  VARCHAR(100) NOT NULL,
     start_point VARCHAR(100) NOT NULL,
     end_point   VARCHAR(100) NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Named corridor between two terminal points';
 
 -- ------------------------------------------------------------
--- STOP — a pick-up/drop-off point
+-- 1.4 STOP — a pick-up/drop-off point along a corridor
 -- ------------------------------------------------------------
 CREATE TABLE stop (
     stop_id     INT AUTO_INCREMENT PRIMARY KEY,
     stop_name   VARCHAR(100) NOT NULL,
     latitude    DECIMAL(9,6) NOT NULL,
     longitude   DECIMAL(9,6) NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Geocoded stop used for ETA and route planning';
+
+-- ============================================================
+-- 2. RELATIONSHIPS
+-- ============================================================
 
 -- ------------------------------------------------------------
--- ROUTE_STOP — junction table: a route "has" stops,
--- a stop "appears in" routes, ordered along the route
+-- 2.1 ROUTE_STOP — junction: ordered stops belonging to a route
 -- ------------------------------------------------------------
 CREATE TABLE route_stop (
     route_stop_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -65,10 +96,11 @@ CREATE TABLE route_stop (
     FOREIGN KEY (route_id) REFERENCES route(route_id) ON DELETE CASCADE,
     FOREIGN KEY (stop_id)  REFERENCES stop(stop_id)   ON DELETE CASCADE,
     UNIQUE KEY uq_route_stop_order (route_id, stop_order)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Many-to-many link with explicit ordering per route';
 
 -- ------------------------------------------------------------
--- BUS 
+-- 2.2 BUS — vehicle with live GPS snapshot
 -- ------------------------------------------------------------
 CREATE TABLE bus (
     bus_id        INT AUTO_INCREMENT PRIMARY KEY,
@@ -81,10 +113,15 @@ CREATE TABLE bus (
     last_updated  DATETIME,
     FOREIGN KEY (route_id)  REFERENCES route(route_id)   ON DELETE SET NULL,
     FOREIGN KEY (driver_id) REFERENCES driver(driver_id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Fleet unit; nullable route/driver when unassigned';
+
+-- ============================================================
+-- 3. COMMUNITY / FEEDBACK
+-- ============================================================
 
 -- ------------------------------------------------------------
--- RATING 
+-- 3.1 RATING — per-bus cleanliness and safety scores
 -- ------------------------------------------------------------
 CREATE TABLE rating (
     rating_id   INT AUTO_INCREMENT PRIMARY KEY,
@@ -96,10 +133,11 @@ CREATE TABLE rating (
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (bus_id)  REFERENCES bus(bus_id)   ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Rider feedback; comment is optional free text';
 
 -- ------------------------------------------------------------
--- TRAFFIC REPORT 
+-- 3.2 TRAFFIC REPORT — crowd-sourced congestion alerts
 -- ------------------------------------------------------------
 CREATE TABLE traffic_report (
     report_id   INT AUTO_INCREMENT PRIMARY KEY,
@@ -108,10 +146,55 @@ CREATE TABLE traffic_report (
     severity    ENUM('light', 'moderate', 'heavy') NOT NULL,
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='User-submitted traffic conditions at a location';
 
 -- ============================================================
--- Seed data
+-- 4. INDEXES (query paths used by the API)
+-- ============================================================
+
+CREATE INDEX idx_bus_route_id      ON bus (route_id);
+CREATE INDEX idx_bus_driver_id     ON bus (driver_id);
+CREATE INDEX idx_bus_last_updated  ON bus (last_updated DESC);
+
+CREATE INDEX idx_route_stop_route  ON route_stop (route_id);
+CREATE INDEX idx_route_stop_stop   ON route_stop (stop_id);
+
+CREATE INDEX idx_rating_user_id    ON rating (user_id);
+CREATE INDEX idx_rating_bus_id     ON rating (bus_id);
+CREATE INDEX idx_rating_created_at ON rating (created_at DESC);
+
+CREATE INDEX idx_traffic_user_id   ON traffic_report (user_id);
+CREATE INDEX idx_traffic_created   ON traffic_report (created_at DESC);
+
+-- ============================================================
+-- 5. VIEWS (stable read models for common API queries)
+-- ============================================================
+
+CREATE VIEW v_live_buses AS
+SELECT b.bus_id,
+       b.plate_no,
+       r.route_name,
+       b.current_lat,
+       b.current_lng,
+       b.last_updated
+FROM bus b
+JOIN route r ON r.route_id = b.route_id
+ORDER BY b.last_updated DESC;
+
+CREATE VIEW v_route_stops_ordered AS
+SELECT rs.route_id,
+       rs.stop_order,
+       s.stop_id,
+       s.stop_name,
+       s.latitude,
+       s.longitude
+FROM route_stop rs
+JOIN stop s ON s.stop_id = rs.stop_id
+ORDER BY rs.route_id, rs.stop_order;
+
+-- ============================================================
+-- 6. Seed data (development / demo)
 -- ============================================================
 INSERT INTO users (name, email, password, user_type) VALUES
 ('Aline U.', 'aline@email.com', '$2b$10$examplehashvalue1', 'commuter'),
@@ -144,20 +227,3 @@ INSERT INTO rating (user_id, bus_id, cleanliness, safety) VALUES
 INSERT INTO traffic_report (user_id, location, severity) VALUES
 (1, 'Kimironko junction', 'heavy'),
 (2, 'Remera roundabout',  'moderate');
-
--- ============================================================
--- Example query: live buses with route + latest known position
--- (backs the GET /buses/live endpoint)
--- ============================================================
-SELECT b.bus_id, b.plate_no, r.route_name,
-       b.current_lat, b.current_lng, b.last_updated
-FROM bus b
-JOIN route r ON r.route_id = b.route_id
-ORDER BY b.last_updated DESC;
-
--- Example query: stops in order for a given route
-SELECT rs.stop_order, s.stop_name, s.latitude, s.longitude
-FROM route_stop rs
-JOIN stop s ON s.stop_id = rs.stop_id
-WHERE rs.route_id = 1
-ORDER BY rs.stop_order;
