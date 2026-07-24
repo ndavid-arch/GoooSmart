@@ -1,8 +1,10 @@
 import { useAuth } from "../context/AuthContext";
 import { RoleBadge } from "../components/Badges";
+import { usePushNotifications } from "../hooks/usePushNotifications";
 
 export default function Profile() {
   const { user } = useAuth();
+  const push = usePushNotifications();
   if (!user) return null;
 
   const rows = [
@@ -54,6 +56,27 @@ export default function Profile() {
             <span style={{ fontWeight: 600 }}>{value}</span>
           </div>
         ))}
+      </div>
+      
+      <div className="card" style={{ marginTop: 18 }}>
+        <div className="card-title">Push notifications</div>
+        <p style={{ fontSize: 13.5, color: "var(--gray-600)", marginBottom: 14 }}>
+          Get notified in your browser when a bus you're tracking is almost at your stop, or is
+          running behind schedule — set these up from the "Notify me" section on any bus page.
+        </p>
+        {push.error && <div className="alert alert-error">{push.error}</div>}
+        {!push.supported && !push.loading && (
+          <div className="alert alert-error">This browser doesn't support push notifications.</div>
+        )}
+        {push.supported && (
+          <button
+            className={`btn btn-block ${push.enabled ? "btn-danger" : "btn-success"}`}
+            disabled={push.loading}
+            onClick={push.enabled ? push.disable : push.enable}
+          >
+            {push.loading ? "Checking..." : push.enabled ? "Turn off notifications" : "Enable notifications"}
+          </button>
+        )}
       </div>
     </div>
   );

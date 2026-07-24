@@ -1,5 +1,10 @@
 from rest_framework import permissions
 
+class IsAdmin(permissions.BasePermission):
+    """Only admin-role users may access this view at all."""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and getattr(request.user, 'role', None) == 'admin'
 
 class IsAdminOrReadOnly(permissions.BasePermission):
     """Anyone can view (GET); only admin-role users can create/edit/delete."""

@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from analytics.services import record_leg_arrival, check_eta_alerts
 
 from .models import Bus
 from .serializers import BusSerializer, GPSUpdateSerializer
@@ -40,6 +41,8 @@ class GPSUpdateView(APIView):
         bus.current_lng = serializer.validated_data['longitude']
         bus.last_updated = timezone.now()
         bus.save()
+        record_leg_arrival(bus)
+        check_eta_alerts(bus)
 
         return Response(BusSerializer(bus).data, status=status.HTTP_200_OK)
 

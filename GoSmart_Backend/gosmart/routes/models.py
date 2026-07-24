@@ -24,6 +24,7 @@ class RouteStop(models.Model):
     route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='route_stops')
     stop = models.ForeignKey(Stop, on_delete=models.CASCADE, related_name='stop_routes')
     stop_order = models.PositiveIntegerField()  # 1, 2, 3... position along the route
+    scheduled_leg_minutes = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ['stop_order']

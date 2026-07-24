@@ -10,6 +10,7 @@ import { routesApi } from "../api/routes";
 import { ratingsApi } from "../api/community";
 import { apiErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { ridershipApi, etaAlertsApi } from "../api/analytics";
 
 export default function BusDetail() {
   const { id } = useParams();
@@ -37,6 +38,50 @@ export default function BusDetail() {
   const [ratingError, setRatingError] = useState("");
   const [ratingSuccess, setRatingSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const [boarding, setBoarding] = useState(false);
+  const [boardMessage, setBoardMessage] = useState("");
+  const [alertStop, setAlertStop] = useState("");
+  const [alertThreshold, setAlertThreshold] = useState(5);
+  const [alertError, setAlertError] = useState("");
+  const [alertSuccess, setAlertSuccess] = useState("");
+  const [alertBusy, setAlertBusy] = useState(false);
+
+  async function handleBoard() {
+    setBoarding(true);
+    setBoardMessage("");
+    try {
+      await ridershipApi.board(Number(id));
+      setBoardMessage("Thanks — logged as a rider on this bus.");
+    } catch (err) {
+      setBoardMessage(apiErrorMessage(err, "Could not log your ride."));
+    } finally {
+      setBoarding(false);
+    }
+  }
+
+  async function handleAlertSubmit(e) {
+    e.preventDefault();
+    setAlertError("");
+    setAlertSuccess("");
+    if (!alertStop) {
+      setAlertError("Choose a stop first.");
+      return;
+    }
+    setAlertBusy(true);
+    try {
+      await etaAlertsApi.create({
+        bus: Number(id),
+        stop: Number(alertStop),
+        threshold_minutes: Number(alertThreshold),
+      });
+      setAlertSuccess("You'll get a push notification when this bus is close.");
+    } catch (err) {
+      setAlertError(apiErrorMessage(err, "Could not set up that alert."));
+    } finally {
+      setAlertBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (bus?.route) {
@@ -158,6 +203,54 @@ export default function BusDetail() {
               </div>
             )}
           </div>
+
+          {user?.role === "passenger" && (
+            <div className="card">
+              <div className="card-title">🔔 Notify me</div>
+              <p style={{ fontSize: 13, color: "var(--gray-600)", marginBottom: 10 }}>
+                Riding this bus? Tap in below. Or get a one-time push notification when it's near
+                your stop, or when it's running late — enable notifications in your{" "}
+                <Link to="/app/profile" style={{ color: "var(--blue-600)", fontWeight: 600 }}>
+                  profile
+                </Link>{" "}
+                first.
+              </p>
+
+              {boardMessage && <div className="alert alert-success">{boardMessage}</div>}
+              <button className="btn btn-accent btn-block" disabled={boarding} onClick={handleBoard} style={{ marginBottom: 16 }}>
+                {boarding ? "Logging..." : "🚏 I'm on this bus"}
+              </button>
+
+              {alertError && <div className="alert alert-error">{alertError}</div>}
+              {alertSuccess && <div className="alert alert-success">{alertSuccess}</div>}
+              <form onSubmit={handleAlertSubmit} style={{ borderTop: "1px solid var(--gray-100)", paddingTop: 14 }}>
+                <div className="field">
+                  <label>Alert me near this stop</label>
+                  <select value={alertStop} onChange={(e) => setAlertStop(e.target.value)}>
+                    <option value="">Select a stop...</option>
+                    {orderedStops.map((rs) => (
+                      <option key={rs.stop} value={rs.stop}>
+                        #{rs.stop_order} — {rs.stop_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label>When it's within (minutes)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={alertThreshold}
+                    onChange={(e) => setAlertThreshold(e.target.value)}
+                  />
+                </div>
+                <button className="btn btn-primary btn-block" disabled={alertBusy}>
+                  {alertBusy ? "Setting up..." : "Set alert"}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
