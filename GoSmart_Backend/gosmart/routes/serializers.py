@@ -15,8 +15,7 @@ class RouteStopSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RouteStop
-        fields = ['id', 'route', 'stop', 'stop_order', 'stop_name', 'latitude', 'longitude']
-
+        fields = ['id', 'route', 'stop', 'stop_order', 'stop_name', 'latitude', 'longitude','scheduled_leg_minutes',]
 
 class RouteSerializer(serializers.ModelSerializer):
     # nested, ordered list of stops shown when viewing a route

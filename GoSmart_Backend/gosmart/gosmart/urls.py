@@ -24,4 +24,5 @@ urlpatterns = [
     path('api/', include('routes.urls')),
     path('api/', include('tracking.urls')),
     path('api/', include('community.urls')),
+    path('api/', include('analytics.urls')),
 ]

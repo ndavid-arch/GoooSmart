@@ -4,7 +4,7 @@ import { routesApi, stopsApi, routeStopsApi } from "../../api/routes";
 import { apiErrorMessage } from "../../api/client";
 import { EmptyState } from "../Loading";
 
-const BLANK = { route: "", stop: "", stop_order: 1 };
+const BLANK = { route: "", stop: "", stop_order: 1, scheduled_leg_minutes: "" };
 
 export default function RouteStopsPanel() {
   const { data: routes } = usePolling(() => routesApi.list(), 20000);
@@ -25,6 +25,7 @@ export default function RouteStopsPanel() {
         route: Number(form.route),
         stop: Number(form.stop),
         stop_order: Number(form.stop_order),
+        scheduled_leg_minutes: form.scheduled_leg_minutes ? Number(form.scheduled_leg_minutes) : null,
       });
       setForm({ ...BLANK, route: form.route, stop_order: Number(form.stop_order) + 1 });
       refetch();
@@ -80,7 +81,10 @@ export default function RouteStopsPanel() {
                   #{l.stop_order}
                 </span>
                 <strong style={{ fontSize: 14 }}>{l.stop_name}</strong>
-                <div style={{ fontSize: 12, color: "var(--gray-400)" }}>{routeName(l.route)}</div>
+                <div style={{ fontSize: 12, color: "var(--gray-400)" }}>
+                  {routeName(l.route)}
+                  {l.scheduled_leg_minutes ? ` · scheduled ${l.scheduled_leg_minutes} min from previous stop` : ""}
+                </div>
               </div>
               <button className="btn btn-danger btn-sm" onClick={() => handleDelete(l.id)}>
                 Remove
@@ -129,6 +133,16 @@ export default function RouteStopsPanel() {
               required
               value={form.stop_order}
               onChange={(e) => setForm({ ...form, stop_order: e.target.value })}
+            />
+          </div>
+          <div className="field">
+            <label>Scheduled minutes from previous stop (optional)</label>
+            <input
+              type="number"
+              min={1}
+              placeholder="e.g. 5 — powers the delay dashboard"
+              value={form.scheduled_leg_minutes}
+              onChange={(e) => setForm({ ...form, scheduled_leg_minutes: e.target.value })}
             />
           </div>
           <button className="btn btn-primary btn-block" disabled={busy}>
