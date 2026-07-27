@@ -6,6 +6,7 @@ import { busLines, busRoute, routeColor, routeLabel, relativeTime } from "../uti
 
 const KIMIRONKO_CENTER = [-1.9506, 30.1213];
 
+
 /*
  * The design brief asks for a simplified vector basemap — white roads, grey
  * land, no satellite or terrain — so GoSmart uses CARTO's Positron/Dark Matter
