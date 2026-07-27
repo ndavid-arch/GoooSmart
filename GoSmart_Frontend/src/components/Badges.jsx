@@ -1,11 +1,11 @@
 export function LiveBadge({ live }) {
   return live ? (
     <span className="badge badge-green">
-      <span className="dot" style={{ background: "#2e9e4f" }} /> Live
+      <span className="dot dot-live" style={{ background: "var(--brand)" }} /> Live
     </span>
   ) : (
     <span className="badge badge-gray">
-      <span className="dot" style={{ background: "#9aa5b1" }} /> Offline
+      <span className="dot" style={{ background: "var(--dim)" }} /> Offline
     </span>
   );
 }
