@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiErrorMessage } from "../api/client";
+import { ScreenHead } from "../components/Ui";
+import { greeting } from "../utils/route";
 
 export default function Login() {
   const { login } = useAuth();
@@ -10,6 +12,8 @@ export default function Login() {
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const valid = form.username.trim() && form.password;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -30,22 +34,28 @@ export default function Login() {
   }
 
   return (
-    <div className="page" style={{ maxWidth: 420 }}>
-      <div className="card">
-        <h2 style={{ color: "var(--blue-900)", marginBottom: 4 }}>Welcome back</h2>
-        <p style={{ color: "var(--gray-600)", fontSize: 14, marginBottom: 20 }}>
-          Log in to track buses along the Kimironko corridor.
-        </p>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--bg)" }}>
+      <ScreenHead title="Sign in" onBack={() => navigate("/")} />
 
-        {error && <div className="alert alert-error">{error}</div>}
+      <form onSubmit={handleSubmit} style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px" }} className="animate-in">
+          <div style={{ fontSize: 22, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.6px" }}>
+            {greeting()}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4, marginBottom: 24 }}>
+            Sign in to track buses in Kigali.
+          </div>
 
-        <form onSubmit={handleSubmit}>
+          {error && <div className="alert alert-error">{error}</div>}
+
           <div className="field">
             <label>Username</label>
             <input
               autoFocus
+              autoComplete="username"
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
+              placeholder="e.g. amina"
               required
             />
           </div>
@@ -53,20 +63,27 @@ export default function Login() {
             <label>Password</label>
             <input
               type="password"
+              autoComplete="current-password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
+              placeholder="Your password"
               required
             />
           </div>
-          <button className="btn btn-primary btn-block" disabled={busy}>
-            {busy ? "Logging in..." : "Log in"}
-          </button>
-        </form>
+        </div>
 
-        <p style={{ marginTop: 16, fontSize: 13.5, color: "var(--gray-600)" }}>
-          New to GoSmart? <Link to="/register" style={{ color: "var(--blue-600)", fontWeight: 700 }}>Create an account</Link>
-        </p>
-      </div>
+        <div style={{ padding: "16px 20px 28px", borderTop: "1px solid var(--border)" }}>
+          <button className="btn btn-primary btn-lg" disabled={busy || !valid}>
+            {busy ? "Signing in…" : "Sign in"}
+          </button>
+          <p style={{ marginTop: 16, fontSize: 13, color: "var(--muted)", textAlign: "center" }}>
+            New to GoSmart?{" "}
+            <Link to="/register" style={{ color: "var(--brand)", fontWeight: 700 }}>
+              Create an account
+            </Link>
+          </p>
+        </div>
+      </form>
     </div>
   );
 }

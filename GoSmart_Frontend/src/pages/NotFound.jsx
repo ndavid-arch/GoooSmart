@@ -1,14 +1,34 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { LogoMark } from "../components/Icons";
 
 export default function NotFound() {
+  const navigate = useNavigate();
+
   return (
-    <div className="page" style={{ textAlign: "center", paddingTop: 80 }}>
-      <div style={{ fontSize: 46, marginBottom: 10 }}>🚏</div>
-      <h2 style={{ color: "var(--blue-900)", marginBottom: 8 }}>This stop doesn't exist</h2>
-      <p style={{ color: "var(--gray-600)", marginBottom: 20 }}>The page you're looking for isn't on the map.</p>
-      <Link to="/" className="btn btn-primary">
-        Back to home
-      </Link>
+    <div className="screen">
+      <div className="page" style={{ textAlign: "center", paddingTop: 90 }}>
+        <div
+          style={{
+            width: 76,
+            height: 76,
+            borderRadius: 22,
+            background: "var(--brand-tint)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 18px",
+          }}
+        >
+          <LogoMark size={42} bg="var(--brand-tint)" fg="#16a34a" />
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 8 }}>This stop doesn't exist</h2>
+        <p style={{ color: "var(--muted)", marginBottom: 22, fontSize: 13.5 }}>
+          The page you're looking for isn't on the map.
+        </p>
+        <button className="btn btn-primary btn-lg" onClick={() => navigate("/")}>
+          Back to the map
+        </button>
+      </div>
     </div>
   );
 }

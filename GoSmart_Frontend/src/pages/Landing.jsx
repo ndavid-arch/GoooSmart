@@ -1,127 +1,122 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import MapCanvas from "../components/MapCanvas";
+import { usePolling } from "../hooks/usePolling";
+import { busesApi } from "../api/buses";
 import { useAuth } from "../context/AuthContext";
+import { LogoMark } from "../components/Icons";
 
-const FEATURES = [
-  {
-    icon: "📍",
-    title: "Live Bus Tracking",
-    text: "See real-time GPS locations of buses on the Kimironko corridor, refreshed every few seconds.",
-    color: "var(--blue-600)",
-  },
-  {
-    icon: "⏱️",
-    title: "ETA Prediction",
-    text: "Get an estimated arrival time to your stop based on a bus's last known position.",
-    color: "var(--green-600)",
-  },
-  {
-    icon: "⭐",
-    title: "Cleanliness & Safety Ratings",
-    text: "Rate your ride and see average scores before you board.",
-    color: "var(--yellow-600)",
-  },
-  {
-    icon: "🚧",
-    title: "Traffic Reports",
-    text: "Riders flag congestion in real time so everyone can plan around it.",
-    color: "var(--blue-600)",
-  },
-];
-
+/**
+ * Map-first welcome screen. The map is live even before sign-in — the API
+ * serves buses and routes read-only to anonymous visitors.
+ */
 export default function Landing() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { data: buses } = usePolling(() => busesApi.list(), 10000);
+
+  const live = (buses || []).filter((b) => b.is_live);
+
+  const goHome = () => {
+    if (!user) return navigate("/register");
+    if (user.role === "driver") return navigate("/driver");
+    if (user.role === "admin") return navigate("/admin");
+    return navigate("/app");
+  };
 
   return (
-    <div>
-      <section
-        style={{
-          background: "linear-gradient(180deg, var(--blue-50) 0%, var(--white) 100%)",
-          borderBottom: "1px solid var(--gray-100)",
-        }}
-      >
-        <div className="page" style={{ textAlign: "center", paddingTop: 64, paddingBottom: 56 }}>
-          <span className="badge badge-green" style={{ marginBottom: 18 }}>
-            Built for the Kimironko corridor, Kigali
-          </span>
-          <h1 style={{ fontSize: 42, color: "var(--blue-900)", fontWeight: 800, lineHeight: 1.15, marginBottom: 16 }}>
-            Know exactly when your <span style={{ color: "var(--green-600)" }}>bus</span> arrives.
-          </h1>
-          <p style={{ maxWidth: 560, margin: "0 auto 28px", color: "var(--gray-600)", fontSize: 16 }}>
-            GoSmart shows live bus locations, predicts arrival times, and lets riders report
-            cleanliness, safety, and traffic — all in one place.
-          </p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-            {user ? (
-              <Link to="/app" className="btn btn-primary" style={{ padding: "12px 26px", fontSize: 15 }}>
-                Open Live Map
-              </Link>
-            ) : (
-              <>
-                <Link to="/register" className="btn btn-primary" style={{ padding: "12px 26px", fontSize: 15 }}>
-                  Get started free
-                </Link>
-                <Link to="/login" className="btn btn-ghost" style={{ padding: "12px 26px", fontSize: 15 }}>
-                  Log in
-                </Link>
-              </>
-            )}
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <div className="map-layer">
+        <MapCanvas buses={buses || []} fill fitToMarkers />
+
+        <div className="topbar">
+          <div
+            style={{
+              background: "var(--card)",
+              borderRadius: "var(--r-md)",
+              padding: "10px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              boxShadow: "var(--shadow-float)",
+            }}
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: "var(--brand)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <LogoMark size={18} bg="#16a34a" fg="#ffffff" />
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.4px", lineHeight: 1 }}>
+                GoSmart
+              </div>
+              <div style={{ fontSize: 9, color: "var(--dim)", fontWeight: 600, letterSpacing: "0.1em" }}>
+                KIGALI TRANSIT
+              </div>
+            </div>
           </div>
         </div>
-      </section>
 
-      <section className="page">
-        <div className="grid-auto">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="card">
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  background: "var(--gray-50)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 22,
-                  marginBottom: 12,
-                }}
-              >
-                {f.icon}
-              </div>
-              <h3 style={{ fontSize: 16, color: "var(--blue-900)", marginBottom: 6 }}>{f.title}</h3>
-              <p style={{ fontSize: 13.5, color: "var(--gray-600)", lineHeight: 1.5 }}>{f.text}</p>
-            </div>
+        <div className="map-pill" style={{ top: 76, left: 14 }}>
+          <span className={`dot ${live.length ? "dot-live" : ""}`} style={{ background: live.length ? "var(--brand)" : "var(--dim)" }} />
+          {live.length} {live.length === 1 ? "bus" : "buses"} live now
+        </div>
+      </div>
+
+      <div className="sheet" style={{ paddingBottom: 28 }}>
+        <div className="handle" />
+        <div style={{ fontSize: 20, fontWeight: 900, color: "var(--text)", letterSpacing: "-0.5px", marginBottom: 4 }}>
+          {user ? `Welcome back, ${user.username}` : "Welcome to GoSmart"}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16, lineHeight: 1.55 }}>
+          Track buses in Kigali in real time, get arrival estimates for your stop, and see what riders
+          are reporting before you board.
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+          {["Live tracking", "ETA to your stop", "Rider ratings", "Traffic reports"].map((f) => (
+            <span key={f} className="badge badge-blue">
+              {f}
+            </span>
           ))}
         </div>
-      </section>
 
-      <section className="page" style={{ paddingTop: 0 }}>
-        <div
-          className="card"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 16,
-            background: "linear-gradient(135deg, var(--blue-600), var(--green-600))",
-            border: "none",
-          }}
-        >
-          <div>
-            <h3 style={{ color: "var(--white)", fontSize: 20, marginBottom: 6 }}>
-              The problem: no reliable way to know when the next bus arrives.
-            </h3>
-            <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, maxWidth: 520 }}>
-              That gap pushes commuters toward taxi-motos — faster, but more expensive and
-              linked to the majority of road accidents. GoSmart closes that gap.
-            </p>
-          </div>
-          <Link to={user ? "/app" : "/register"} className="btn btn-accent" style={{ padding: "12px 22px" }}>
-            {user ? "View live buses" : "Join GoSmart"}
-          </Link>
-        </div>
-      </section>
+        <button className="btn btn-primary btn-lg" onClick={goHome} style={{ marginBottom: 10 }}>
+          {user ? "Open live map" : "Create an account"}
+        </button>
+
+        {!user && (
+          <>
+            <button className="btn btn-ghost btn-lg" onClick={() => navigate("/login")} style={{ marginBottom: 12 }}>
+              I already have an account
+            </button>
+            {/* In a hurry? The whole map works without signing up. */}
+            <button
+              onClick={() => navigate("/app")}
+              style={{
+                width: "100%",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 13.5,
+                fontWeight: 600,
+                color: "var(--muted)",
+                padding: 8,
+              }}
+            >
+              Browse as guest
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
