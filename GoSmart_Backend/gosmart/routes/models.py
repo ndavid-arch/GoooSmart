@@ -11,13 +11,16 @@ class Stop(models.Model):
 
 
 class Route(models.Model):
+    # The line number riders and drivers actually use day to day (e.g. 305,
+    # 101). Kept as text so variants like "305A" are possible.
+    route_number = models.CharField(max_length=10, blank=True, default='')
     route_name = models.CharField(max_length=100)
     start_point = models.CharField(max_length=100)
     end_point = models.CharField(max_length=100)
     stops = models.ManyToManyField(Stop, through='RouteStop', related_name='routes')
 
     def __str__(self):
-        return self.route_name
+        return f"{self.route_number} {self.route_name}".strip()
 
 
 class RouteStop(models.Model):

@@ -10,7 +10,7 @@ class RouteStopInline(admin.TabularInline):
 
 @admin.register(Route)
 class RouteAdmin(admin.ModelAdmin):
-    list_display = ('route_name', 'start_point', 'end_point')
+    list_display = ('route_number', 'route_name', 'start_point', 'end_point')
     inlines = [RouteStopInline]
 
 

@@ -3,8 +3,10 @@ import { usePolling } from "../../hooks/usePolling";
 import { routesApi } from "../../api/routes";
 import { apiErrorMessage } from "../../api/client";
 import { EmptyState } from "../Loading";
+import { IconRoute } from "../Icons";
+import { RouteBadge } from "../Ui";
 
-const BLANK = { route_name: "", start_point: "", end_point: "" };
+const BLANK = { route_number: "", route_name: "", start_point: "", end_point: "" };
 
 export default function RoutesPanel() {
   const { data: routes, refetch } = usePolling(() => routesApi.list(), 20000);
@@ -35,7 +37,12 @@ export default function RoutesPanel() {
 
   function handleEdit(route) {
     setEditingId(route.id);
-    setForm({ route_name: route.route_name, start_point: route.start_point, end_point: route.end_point });
+    setForm({
+      route_number: route.route_number || "",
+      route_name: route.route_name,
+      start_point: route.start_point,
+      end_point: route.end_point,
+    });
   }
 
   async function handleDelete(id) {
@@ -47,7 +54,7 @@ export default function RoutesPanel() {
   return (
     <div className="grid-2" style={{ alignItems: "start" }}>
       <div className="card">
-        <div className="card-title">🗺️ Routes ({(routes || []).length})</div>
+        <div className="card-title">Routes ({(routes || []).length})</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 460, overflowY: "auto" }}>
           {(routes || []).map((r) => (
             <div
@@ -61,10 +68,13 @@ export default function RoutesPanel() {
                 background: "var(--gray-50)",
               }}
             >
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{r.route_name}</div>
-                <div style={{ fontSize: 12, color: "var(--gray-400)" }}>
-                  {r.start_point} → {r.end_point} · {r.route_stops?.length || 0} stops
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <RouteBadge route={r} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{r.route_name}</div>
+                  <div style={{ fontSize: 12, color: "var(--gray-400)" }}>
+                    {r.start_point} → {r.end_point} · {r.route_stops?.length || 0} stops
+                  </div>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
@@ -77,7 +87,9 @@ export default function RoutesPanel() {
               </div>
             </div>
           ))}
-          {routes && routes.length === 0 && <EmptyState icon="🗺️" title="No routes yet" />}
+          {routes && routes.length === 0 && (
+            <EmptyState icon={<IconRoute size={26} c="var(--dim)" />} title="No routes yet" />
+          )}
         </div>
       </div>
 
@@ -85,6 +97,15 @@ export default function RoutesPanel() {
         <div className="card-title">{editingId ? "Edit route" : "Add a route"}</div>
         {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label>Route number</label>
+            <input
+              value={form.route_number}
+              onChange={(e) => setForm({ ...form, route_number: e.target.value })}
+              placeholder="e.g. 305"
+              maxLength={10}
+            />
+          </div>
           <div className="field">
             <label>Route name</label>
             <input

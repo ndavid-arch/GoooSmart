@@ -5,13 +5,14 @@ from .models import Bus
 
 class BusSerializer(serializers.ModelSerializer):
     route_name = serializers.CharField(source='route.route_name', read_only=True, default=None)
+    route_number = serializers.CharField(source='route.route_number', read_only=True, default=None)
     driver_name = serializers.CharField(source='driver.username', read_only=True, default=None)
     is_live = serializers.SerializerMethodField()
 
     class Meta:
         model = Bus
         fields = [
-            'id', 'plate_no', 'capacity', 'route', 'route_name', 'driver', 'driver_name',
+            'id', 'plate_no', 'capacity', 'route', 'route_number', 'route_name', 'driver', 'driver_name',
             'current_lat', 'current_lng', 'last_updated', 'is_live',
         ]
         read_only_fields = ['current_lat', 'current_lng', 'last_updated']
