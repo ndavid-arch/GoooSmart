@@ -5,6 +5,7 @@ import { routesApi } from "../../api/routes";
 import { apiErrorMessage } from "../../api/client";
 import { LiveBadge } from "../Badges";
 import { EmptyState } from "../Loading";
+import { IconBus } from "../Icons";
 
 const BLANK = { plate_no: "", capacity: "", route: "", driver: "" };
 
@@ -62,7 +63,7 @@ export default function BusesPanel() {
   return (
     <div className="grid-2" style={{ alignItems: "start" }}>
       <div className="card">
-        <div className="card-title">🚌 Buses ({(buses || []).length})</div>
+        <div className="card-title">Buses ({(buses || []).length})</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 500, overflowY: "auto" }}>
           {(buses || []).map((b) => (
             <div
@@ -96,7 +97,9 @@ export default function BusesPanel() {
               </div>
             </div>
           ))}
-          {buses && buses.length === 0 && <EmptyState icon="🚌" title="No buses yet" />}
+          {buses && buses.length === 0 && (
+            <EmptyState icon={<IconBus size={26} c="var(--dim)" />} title="No buses yet" />
+          )}
         </div>
       </div>
 
