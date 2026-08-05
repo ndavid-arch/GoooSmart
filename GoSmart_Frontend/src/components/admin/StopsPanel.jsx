@@ -3,6 +3,7 @@ import { usePolling } from "../../hooks/usePolling";
 import { stopsApi } from "../../api/routes";
 import { apiErrorMessage } from "../../api/client";
 import { EmptyState } from "../Loading";
+import { IconStop } from "../Icons";
 
 const BLANK = { stop_name: "", latitude: "", longitude: "" };
 
@@ -47,7 +48,7 @@ export default function StopsPanel() {
   return (
     <div className="grid-2" style={{ alignItems: "start" }}>
       <div className="card">
-        <div className="card-title">🚏 Stops ({(stops || []).length})</div>
+        <div className="card-title">Stops ({(stops || []).length})</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 460, overflowY: "auto" }}>
           {(stops || []).map((s) => (
             <div
@@ -77,7 +78,9 @@ export default function StopsPanel() {
               </div>
             </div>
           ))}
-          {stops && stops.length === 0 && <EmptyState icon="🚏" title="No stops yet" />}
+          {stops && stops.length === 0 && (
+            <EmptyState icon={<IconStop size={26} c="var(--dim)" />} title="No stops yet" />
+          )}
         </div>
       </div>
 
