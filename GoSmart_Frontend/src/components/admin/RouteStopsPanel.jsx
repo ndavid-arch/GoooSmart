@@ -3,6 +3,7 @@ import { usePolling } from "../../hooks/usePolling";
 import { routesApi, stopsApi, routeStopsApi } from "../../api/routes";
 import { apiErrorMessage } from "../../api/client";
 import { EmptyState } from "../Loading";
+import { IconRoute } from "../Icons";
 
 const BLANK = { route: "", stop: "", stop_order: 1, scheduled_leg_minutes: "" };
 
@@ -52,7 +53,7 @@ export default function RouteStopsPanel() {
       <div className="card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div className="card-title" style={{ marginBottom: 0 }}>
-            🔗 Route ↔ Stop links
+            Route ↔ Stop links
           </div>
           <select value={filterRoute} onChange={(e) => setFilterRoute(e.target.value)} style={{ maxWidth: 180 }}>
             <option value="">All routes</option>
@@ -91,7 +92,9 @@ export default function RouteStopsPanel() {
               </button>
             </div>
           ))}
-          {links && visibleLinks.length === 0 && <EmptyState icon="🔗" title="No stops linked yet" />}
+          {links && visibleLinks.length === 0 && (
+            <EmptyState icon={<IconRoute size={26} c="var(--dim)" />} title="No stops linked yet" />
+          )}
         </div>
       </div>
 
