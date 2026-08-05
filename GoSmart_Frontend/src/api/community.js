@@ -11,6 +11,17 @@ export const ratingsApi = {
   remove: (id) => client.delete(`/ratings/${id}/`),
 };
 
+export const busReportsApi = {
+  list: (busId) =>
+    client
+      .get("/bus-reports/", { params: busId ? { bus: busId } : {} })
+      .then((r) => r.data),
+  create: (payload) => client.post("/bus-reports/", payload).then((r) => r.data),
+  remove: (id) => client.delete(`/bus-reports/${id}/`),
+  // Buses the signed-in rider has tapped into recently — the ones they may report.
+  boardable: () => client.get("/bus-reports/boardable/").then((r) => r.data),
+};
+
 export const trafficReportsApi = {
   list: (severity) =>
     client
