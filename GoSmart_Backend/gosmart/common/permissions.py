@@ -30,9 +30,14 @@ class IsOwnerOrAdminOrReadOnly(permissions.BasePermission):
 
 
 class CanReportReadCreateAdminDelete(permissions.BasePermission):
-    """Anyone authenticated can read/create a traffic report; only admin can delete/review it."""
+    """
+    Anyone — including guests browsing without an account — can read community
+    reports; filing one requires an account; only admin can delete/review.
+    """
 
     def has_permission(self, request, view):
         if request.method == 'DELETE':
             return request.user.is_authenticated and getattr(request.user, 'role', None) == 'admin'
+        if request.method in permissions.SAFE_METHODS:
+            return True
         return request.user.is_authenticated
